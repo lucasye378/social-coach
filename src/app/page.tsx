@@ -10,6 +10,91 @@ const INSTRUCTIONS = [
   "克服社交焦虑",
 ];
 
+const FREE_USES_LIMIT = 3;
+const USES_STORAGE_KEY = "social-coach-uses";
+
+const MONTHLY_PRICE_ID = "price_monthly_placeholder";
+const YEARLY_PRICE_ID = "price_yearly_placeholder";
+
+interface SubscriptionModalProps {
+  onClose: () => void;
+}
+
+function SubscriptionModal({ onClose }: SubscriptionModalProps) {
+  const [loading, setLoading] = useState<"monthly" | "yearly" | null>(null);
+
+  const subscribe = async (priceId: string, plan: "monthly" | "yearly") => {
+    setLoading(plan);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      setLoading(null);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 text-white">
+          <div className="text-3xl mb-2">🚀</div>
+          <h2 className="text-xl font-bold">解锁 Pro 模式</h2>
+          <p className="text-blue-100 text-sm mt-1">
+            你已用完 {FREE_USES_LIMIT} 次免费练习
+          </p>
+        </div>
+
+        {/* Plans */}
+        <div className="p-6 space-y-3">
+          {/* Yearly plan - highlighted */}
+          <button
+            onClick={() => subscribe(YEARLY_PRICE_ID, "yearly")}
+            disabled={loading !== null}
+            className="w-full border-2 border-blue-600 rounded-2xl p-4 text-left hover:bg-blue-50 transition-colors relative disabled:opacity-60"
+          >
+            <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+              省 $71
+            </div>
+            <div className="font-bold text-gray-900 text-base">年付 $49</div>
+            <div className="text-sm text-gray-500 mt-0.5">$4.08/月 · 比月付省 $70.88</div>
+            {loading === "yearly" && (
+              <span className="text-blue-600 text-sm mt-1 block">跳转中...</span>
+            )}
+          </button>
+
+          {/* Monthly plan */}
+          <button
+            onClick={() => subscribe(MONTHLY_PRICE_ID, "monthly")}
+            disabled={loading !== null}
+            className="w-full border border-gray-200 rounded-2xl p-4 text-left hover:bg-gray-50 transition-colors disabled:opacity-60"
+          >
+            <div className="font-bold text-gray-900 text-base">订阅月付 $9.99</div>
+            <div className="text-sm text-gray-500 mt-0.5">随时取消</div>
+            {loading === "monthly" && (
+              <span className="text-gray-500 text-sm mt-1 block">跳转中...</span>
+            )}
+          </button>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            暂不升级
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
@@ -18,9 +103,16 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<string>("约会开场白");
   const [error, setError] = useState("");
-  
+  const [useCount, setUseCount] = useState(0);
+  const [showPaywall, setShowPaywall] = useState(false);
+
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(USES_STORAGE_KEY);
+    setUseCount(stored ? parseInt(stored, 10) : 0);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
@@ -85,6 +177,15 @@ export default function Home() {
     const content = text || inputText.trim();
     if (!content) return;
 
+    const newCount = useCount + 1;
+    if (newCount > FREE_USES_LIMIT) {
+      setShowPaywall(true);
+      return;
+    }
+
+    localStorage.setItem(USES_STORAGE_KEY, String(newCount));
+    setUseCount(newCount);
+
     const userMessage: Message = { role: "user", content };
     setMessages((prev) => [...prev, userMessage]);
     setInputText("");
@@ -99,7 +200,7 @@ export default function Home() {
       });
 
       const data = await res.json();
-      
+
       if (data.reply) {
         const assistantMessage: Message = { role: "assistant", content: data.reply };
         setMessages((prev) => [...prev, assistantMessage]);
@@ -119,8 +220,12 @@ export default function Home() {
     speechSynthesis.cancel();
   };
 
+  const remainingUses = Math.max(0, FREE_USES_LIMIT - useCount);
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {showPaywall && <SubscriptionModal onClose={() => setShowPaywall(false)} />}
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-6 py-4">
@@ -130,6 +235,14 @@ export default function Home() {
       </header>
 
       <div className="max-w-lg mx-auto px-6 py-6">
+        {/* Free uses banner */}
+        {remainingUses > 0 && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
+            <span>🎁</span>
+            <span>剩余免费次数：<strong>{remainingUses}</strong> 次</span>
+          </div>
+        )}
+
         {/* Scenario Selector */}
         <div className="mb-6">
           <label className="text-sm font-medium text-gray-700 mb-2 block">选择练习场景</label>
@@ -160,7 +273,7 @@ export default function Home() {
                 <p className="text-sm mt-1">点击麦克风或输入文字，开始和 AI 教练对话</p>
               </div>
             )}
-            
+
             {messages.map((msg, idx) => (
               <div
                 key={idx}
@@ -215,7 +328,7 @@ export default function Home() {
                 rows={2}
               />
             </div>
-            
+
             <div className="flex gap-2">
               {/* Mic Button */}
               <button
