@@ -13,8 +13,9 @@ const INSTRUCTIONS = [
 const FREE_USES_LIMIT = 3;
 const USES_STORAGE_KEY = "social-coach-uses";
 
-const MONTHLY_PRICE_ID = "price_monthly_placeholder";
-const YEARLY_PRICE_ID = "price_yearly_placeholder";
+// Hardcoded Payment Links - Stripe dashboard controls pricing
+const PAYMENT_LINK_MONTHLY = "https://buy.stripe.com/test_4gM00j4Eg5xIbFAayWcjS0a";
+const PAYMENT_LINK_YEARLY = "https://buy.stripe.com/test_eVq9ATeeQaS2cJEayWcjS03";
 
 interface SubscriptionModalProps {
   onClose: () => void;
@@ -23,38 +24,19 @@ interface SubscriptionModalProps {
 function SubscriptionModal({ onClose }: SubscriptionModalProps) {
   const [loading, setLoading] = useState<"monthly" | "yearly" | null>(null);
 
-  const subscribe = async (priceId: string, plan: "monthly" | "yearly") => {
+  const subscribe = async (plan: "monthly" | "yearly") => {
     setLoading(plan);
-    // Track: user selected plan, about to redirect to Stripe
-    const event = {
-      event: "plan_selected",
-      plan,
-      priceId,
-      timestamp: new Date().toISOString(),
-    };
+    // Track: user selected plan, redirecting to Stripe
+    const event = { event: "plan_selected", plan, timestamp: new Date().toISOString() };
     localStorage.setItem("payment_event", JSON.stringify(event));
     console.log("[Tracking] plan_selected", event);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        // Track: redirecting to Stripe
-        const redirectEvent = {
-          event: "stripe_redirect",
-          plan,
-          timestamp: new Date().toISOString(),
-        };
-        localStorage.setItem("payment_event", JSON.stringify(redirectEvent));
-        console.log("[Tracking] stripe_redirect", redirectEvent);
-        window.location.href = data.url;
-      }
-    } catch {
-      setLoading(null);
-    }
+
+    const redirectEvent = { event: "stripe_redirect", plan, timestamp: new Date().toISOString() };
+    localStorage.setItem("payment_event", JSON.stringify(redirectEvent));
+    console.log("[Tracking] stripe_redirect", redirectEvent);
+
+    const url = plan === "monthly" ? PAYMENT_LINK_MONTHLY : PAYMENT_LINK_YEARLY;
+    window.location.href = url;
   };
 
   return (
@@ -78,16 +60,16 @@ function SubscriptionModal({ onClose }: SubscriptionModalProps) {
               const event = { event: "upgrade_click", plan: "yearly", timestamp: new Date().toISOString() };
               localStorage.setItem("payment_event", JSON.stringify(event));
               console.log("[Tracking] upgrade_click", event);
-              subscribe(YEARLY_PRICE_ID, "yearly");
+              subscribe("yearly");
             }}
             disabled={loading !== null}
             className="w-full border-2 border-blue-600 rounded-2xl p-4 text-left hover:bg-blue-50 transition-colors relative disabled:opacity-60"
           >
             <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">
-              省 $71
+              省 $60
             </div>
-            <div className="font-bold text-gray-900 text-base">年付 $49</div>
-            <div className="text-sm text-gray-500 mt-0.5">$4.08/月 · 比月付省 $70.88</div>
+            <div className="font-bold text-gray-900 text-base">年付 $59.99</div>
+            <div className="text-sm text-gray-500 mt-0.5">$5.00/月 · 比月付省 $59.89</div>
             {loading === "yearly" && (
               <span className="text-blue-600 text-sm mt-1 block">跳转中...</span>
             )}
@@ -100,7 +82,7 @@ function SubscriptionModal({ onClose }: SubscriptionModalProps) {
               const event = { event: "upgrade_click", plan: "monthly", timestamp: new Date().toISOString() };
               localStorage.setItem("payment_event", JSON.stringify(event));
               console.log("[Tracking] upgrade_click", event);
-              subscribe(MONTHLY_PRICE_ID, "monthly");
+              subscribe("monthly");
             }}
             disabled={loading !== null}
             className="w-full border border-gray-200 rounded-2xl p-4 text-left hover:bg-gray-50 transition-colors disabled:opacity-60"
