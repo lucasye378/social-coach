@@ -259,7 +259,7 @@ export default function Home() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-6 py-4">
           <h1 className="text-2xl font-bold text-gray-900">🎯 社交教练</h1>
-          <p className="text-sm text-gray-500 mt-1">AI 陪你练习，给你真实反馈</p>
+          <p className="text-sm text-gray-500 mt-1">不知道怎么说话？先和 AI 练</p>
         </div>
       </header>
 
@@ -297,9 +297,9 @@ export default function Home() {
           <div className="p-4 space-y-4">
             {messages.length === 0 && (
               <div className="text-center py-12 text-gray-400">
-                <div className="text-5xl mb-4">👋</div>
-                <p className="font-medium text-gray-600">开始练习</p>
-                <p className="text-sm mt-1">点击麦克风或输入文字，开始和 AI 教练对话</p>
+                <div className="text-5xl mb-4">🎯</div>
+                <p className="font-medium text-gray-600">选一个场景，开始练习</p>
+                <p className="text-sm mt-1">约会不知道怎么开口？先在这里练一遍</p>
               </div>
             )}
 
@@ -352,7 +352,7 @@ export default function Home() {
                     handleSend();
                   }
                 }}
-                placeholder="输入你想练习的内容..."
+                placeholder="例如：我想约她周末吃饭，怎么开口？"
                 className="w-full px-4 py-3 bg-gray-50 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 rows={2}
               />
