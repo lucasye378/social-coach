@@ -14,8 +14,8 @@ const FREE_USES_LIMIT = 3;
 const USES_STORAGE_KEY = "social-coach-uses";
 
 // Hardcoded Payment Links - Stripe dashboard controls pricing
-const PAYMENT_LINK_MONTHLY = "https://buy.stripe.com/test_4gM00j4Eg5xIbFAayWcjS0a";
-const PAYMENT_LINK_YEARLY = "https://buy.stripe.com/test_eVq9ATeeQaS2cJEayWcjS03";
+const PAYMENT_LINK_MONTHLY = "https://buy.stripe.com/test_6oU9AT9YAe4egZU6iGcjS0c";
+const PAYMENT_LINK_YEARLY = "https://buy.stripe.com/test_28E7sL1s4f8i394dL8cjS0d";
 
 interface SubscriptionModalProps {
   onClose: () => void;
