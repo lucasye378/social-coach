@@ -27,11 +27,16 @@ function SubscriptionModal({ onClose }: SubscriptionModalProps) {
   const subscribe = async (plan: "monthly" | "yearly") => {
     setLoading(plan);
     // Track: user selected plan, redirecting to Stripe
-    const event = { event: "plan_selected", plan, timestamp: new Date().toISOString() };
+    const utmData = {
+      utm_source: localStorage.getItem("utm_source") || undefined,
+      utm_medium: localStorage.getItem("utm_medium") || undefined,
+      utm_campaign: localStorage.getItem("utm_campaign") || undefined,
+    };
+    const event = { event: "plan_selected", plan, timestamp: new Date().toISOString(), ...utmData };
     localStorage.setItem("payment_event", JSON.stringify(event));
     console.log("[Tracking] plan_selected", event);
 
-    const redirectEvent = { event: "stripe_redirect", plan, timestamp: new Date().toISOString() };
+    const redirectEvent = { event: "stripe_redirect", plan, timestamp: new Date().toISOString(), ...utmData };
     localStorage.setItem("payment_event", JSON.stringify(redirectEvent));
     console.log("[Tracking] stripe_redirect", redirectEvent);
 
@@ -57,7 +62,12 @@ function SubscriptionModal({ onClose }: SubscriptionModalProps) {
           <button
             onClick={() => {
               // Track: upgrade button click (yearly)
-              const event = { event: "upgrade_click", plan: "yearly", timestamp: new Date().toISOString() };
+              const utmData = {
+                utm_source: localStorage.getItem("utm_source") || undefined,
+                utm_medium: localStorage.getItem("utm_medium") || undefined,
+                utm_campaign: localStorage.getItem("utm_campaign") || undefined,
+              };
+              const event = { event: "upgrade_click", plan: "yearly", timestamp: new Date().toISOString(), ...utmData };
               localStorage.setItem("payment_event", JSON.stringify(event));
               console.log("[Tracking] upgrade_click", event);
               subscribe("yearly");
@@ -79,7 +89,12 @@ function SubscriptionModal({ onClose }: SubscriptionModalProps) {
           <button
             onClick={() => {
               // Track: upgrade button click (monthly)
-              const event = { event: "upgrade_click", plan: "monthly", timestamp: new Date().toISOString() };
+              const utmData = {
+                utm_source: localStorage.getItem("utm_source") || undefined,
+                utm_medium: localStorage.getItem("utm_medium") || undefined,
+                utm_campaign: localStorage.getItem("utm_campaign") || undefined,
+              };
+              const event = { event: "upgrade_click", plan: "monthly", timestamp: new Date().toISOString(), ...utmData };
               localStorage.setItem("payment_event", JSON.stringify(event));
               console.log("[Tracking] upgrade_click", event);
               subscribe("monthly");
@@ -123,6 +138,24 @@ export default function Home() {
   useEffect(() => {
     const stored = localStorage.getItem(USES_STORAGE_KEY);
     setUseCount(stored ? parseInt(stored, 10) : 0);
+
+    // Capture UTM params on first visit
+    const params = new URLSearchParams(window.location.search);
+    const utmSource = params.get("utm_source");
+    const utmMedium = params.get("utm_medium");
+    const utmCampaign = params.get("utm_campaign");
+    if (utmSource && !localStorage.getItem("utm_source")) {
+      localStorage.setItem("utm_source", utmSource);
+      localStorage.setItem("utm_medium", utmMedium || "");
+      localStorage.setItem("utm_campaign", utmCampaign || "");
+    }
+
+    // Handle return from Stripe checkout
+    if (params.get("subscribed") === "true") {
+      localStorage.setItem("social-coach-subscribed", "true");
+      setShowPaywall(false);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, []);
 
   useEffect(() => {
