@@ -283,7 +283,7 @@ export default function Home() {
         {remainingUses > 0 && (
           <div className="mb-4 flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
             <span>🎁</span>
-            <span>剩余免费次数：<strong>{remainingUses}</strong> 次</span>
+            <span>免费试用 <strong>{remainingUses}</strong> 次，不绑卡</span>
           </div>
         )}
 
