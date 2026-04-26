@@ -25,6 +25,15 @@ function SubscriptionModal({ onClose }: SubscriptionModalProps) {
 
   const subscribe = async (priceId: string, plan: "monthly" | "yearly") => {
     setLoading(plan);
+    // Track: user selected plan, about to redirect to Stripe
+    const event = {
+      event: "plan_selected",
+      plan,
+      priceId,
+      timestamp: new Date().toISOString(),
+    };
+    localStorage.setItem("payment_event", JSON.stringify(event));
+    console.log("[Tracking] plan_selected", event);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -33,6 +42,14 @@ function SubscriptionModal({ onClose }: SubscriptionModalProps) {
       });
       const data = await res.json();
       if (data.url) {
+        // Track: redirecting to Stripe
+        const redirectEvent = {
+          event: "stripe_redirect",
+          plan,
+          timestamp: new Date().toISOString(),
+        };
+        localStorage.setItem("payment_event", JSON.stringify(redirectEvent));
+        console.log("[Tracking] stripe_redirect", redirectEvent);
         window.location.href = data.url;
       }
     } catch {
@@ -56,7 +73,13 @@ function SubscriptionModal({ onClose }: SubscriptionModalProps) {
         <div className="p-6 space-y-3">
           {/* Yearly plan - highlighted */}
           <button
-            onClick={() => subscribe(YEARLY_PRICE_ID, "yearly")}
+            onClick={() => {
+              // Track: upgrade button click (yearly)
+              const event = { event: "upgrade_click", plan: "yearly", timestamp: new Date().toISOString() };
+              localStorage.setItem("payment_event", JSON.stringify(event));
+              console.log("[Tracking] upgrade_click", event);
+              subscribe(YEARLY_PRICE_ID, "yearly");
+            }}
             disabled={loading !== null}
             className="w-full border-2 border-blue-600 rounded-2xl p-4 text-left hover:bg-blue-50 transition-colors relative disabled:opacity-60"
           >
@@ -72,7 +95,13 @@ function SubscriptionModal({ onClose }: SubscriptionModalProps) {
 
           {/* Monthly plan */}
           <button
-            onClick={() => subscribe(MONTHLY_PRICE_ID, "monthly")}
+            onClick={() => {
+              // Track: upgrade button click (monthly)
+              const event = { event: "upgrade_click", plan: "monthly", timestamp: new Date().toISOString() };
+              localStorage.setItem("payment_event", JSON.stringify(event));
+              console.log("[Tracking] upgrade_click", event);
+              subscribe(MONTHLY_PRICE_ID, "monthly");
+            }}
             disabled={loading !== null}
             className="w-full border border-gray-200 rounded-2xl p-4 text-left hover:bg-gray-50 transition-colors disabled:opacity-60"
           >
